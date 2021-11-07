@@ -3,8 +3,6 @@ title: "Avaliação Final de Introdução à Programação em R"
 author: Giovanni Angelo dos Santos, Pedro Leonardo Motta Weyne Marques e Rafael Gomes de Oliveira
 date: "07/11/2021"
 output: 
-#  prettydoc::html_pretty:
-#    theme: architect
   rmdformats::material
 ---
 
@@ -21,9 +19,10 @@ Esse documento é o resultado da avaliação final da matéria **Introdução à
 
 Para a geração correta do Knit é necessária a instalação do pacote **rmdformats** através do commando
 
-``` {r}
+``` {r, eval=FALSE}
 install.packages("rmdformats")
 ```
+
 
 ## Grupo
 
