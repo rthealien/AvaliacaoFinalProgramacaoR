@@ -19,7 +19,7 @@ Esse documento é o resultado da avaliação final da matéria **Introdução à
 
 Para a geração correta do Knit é necessária a instalação do pacote **rmdformats** através do commando
 
-``` {r, eval=FALSE}
+``` {r requisitos, eval=FALSE}
 install.packages("rmdformats")
 ```
 
