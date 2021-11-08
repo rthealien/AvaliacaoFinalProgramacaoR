@@ -23,6 +23,20 @@ Para a geração correta do Knit é necessária a instalação do pacote **rmdfo
 install.packages("rmdformats")
 ```
 
+## Dados
+
+Serão utilizados os dados sobre as despesas cobertas pela cota para exercício da atividade parlamentar do deputados em 2020
+
+```{r bibliotecas,include=FALSE}
+library(dplyr)
+library(rmarkdown)
+```
+
+```{r dados,warning=FALSE, echo=FALSE}
+dados <- read.csv2("Ano-2020.csv")
+dadosDeputados = dados %>% filter(!is.na(cpf))
+paged_table(dadosDeputados)
+```
 
 ## Grupo
 
