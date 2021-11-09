@@ -33,9 +33,13 @@ library(rmarkdown)
 ```
 
 ```{r dados,warning=FALSE, echo=FALSE}
-dados <- read.csv2("Ano-2020.csv")
+dados <- read.csv2("Ano-2020.csv",encoding = "UTF-8")
 dadosDeputados = dados %>% filter(!is.na(cpf))
 paged_table(dadosDeputados)
+```
+
+```{r summary,warning=FALSE, echo=FALSE}
+table(dadosDeputados)
 ```
 
 ## Grupo
@@ -46,7 +50,34 @@ O grupo responsável por esse projeto é formado por:
 - Pedro Leonardo Motta Weyne Marques
 - Rafael Gomes de Oliveira
 
-# R Markdown
+# Análise
+
+## Valor Gasto por Estado
+
+dadosDeputados %>% 
+  mutate(ï..txNomeParlamentar = txtNomeParlamentar)
+
+
+dadosDeputados %>% 
+  group_by(sgUF,X.U.FEFF.txNomeParlamentar) %>% 
+  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
+
+
+## Valor Gasto por Deputado
+
+
+## Valor Gasto por Partido
+
+
+## Valor Gasto com Empresas Estrangeiras
+
+
+## Valor Gasto por Mês 
+
+
+
+
+
 
 This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
