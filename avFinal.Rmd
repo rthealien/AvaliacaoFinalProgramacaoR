@@ -7,7 +7,9 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+#knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rmarkdown)
 ```
 # Início
 
@@ -27,19 +29,14 @@ install.packages("rmdformats")
 
 Serão utilizados os dados sobre as despesas cobertas pela cota para exercício da atividade parlamentar do deputados em 2020
 
-```{r bibliotecas,include=FALSE}
-library(dplyr)
-library(rmarkdown)
-```
-
 ```{r dados,warning=FALSE, echo=FALSE}
-dados <- read.csv2("Ano-2020.csv",encoding = "UTF-8")
+dados <- read.csv2("Ano-2020.csv", encoding = "UTF-8")
 dadosDeputados = dados %>% filter(!is.na(cpf))
 paged_table(dadosDeputados)
 ```
 
 ```{r summary,warning=FALSE, echo=FALSE}
-table(dadosDeputados)
+#table(dadosDeputados)
 ```
 
 ## Grupo
@@ -54,19 +51,75 @@ O grupo responsável por esse projeto é formado por:
 
 ## Valor Gasto por Estado
 
-dadosDeputados %>% 
-  mutate(ï..txNomeParlamentar = txtNomeParlamentar)
 
+```{r gasto_estado,message=FALSE, warning=FALSE, echo=FALSE}
+#dadosDeputados %>% 
+#  mutate(ï..txNomeParlamentar = txtNomeParlamentar)
 
-dadosDeputados %>% 
-  group_by(sgUF,X.U.FEFF.txNomeParlamentar) %>% 
+gatos_estado = dadosDeputados %>% 
+  group_by(sgUF) %>% 
   summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
 
+library(geobr)
+
+dadosMapa <- structure(
+list(X = 1:27, 
+   uf = gatos_estado$sgUF, 
+   valor = gatos_estado$valor), class = "data.frame", row.names = c(NA, -27L))
+states <- read_country(year = 2020)
+states <- dplyr::left_join(states, dadosMapa, by = c("abbrev_state" = "uf"))
+L = min(states$valor)
+S = max(states$valor)
+
+p = states %>% ggplot() + 
+  geom_sf(aes(fill =  valor), size = 0.9) +
+  scale_fill_gradient(low = "red", high = "blue", name = "Gasto por Estado (R$)", limits = c(L, S), labels = scales::label_dollar(prefix="R$ ")) + 
+  xlab("") +  ylab("") +geom_sf_label(aes(label = abbrev_state),label.padding = unit(0.5, "mm"),size = 3) 
+
+
+p = p +   labs(title = "Gasto por Estado") +
+  theme(plot.caption = element_text(hjust = 0, face= "italic"), 
+        plot.title.position = "plot", 
+        plot.caption.position =  "plot") 
+
+p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),legend.text=element_text(size=10))
+
+plot(p)
+```
 
 ## Valor Gasto por Deputado
 
+Análise para saber quais deputados tiveram mais gastos durante o ano
+
+```{r gasto_deputado,message=FALSE, warning=FALSE,echo=FALSE}
+#Filtro
+gastos_deputados = dadosDeputados %>% 
+                    group_by(cpf,txNomeParlamentar) %>% 
+                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    arrange(desc(valor)) %>% 
+                    select(txNomeParlamentar,valor)
+
+head(gastos_deputados,10)
+
+#Testes com gráficos
+p<-ggplot(gastos_deputados)+
+ geom_point(aes(x = txNomeParlamentar, y = valor, color = valor))
+
+require(scales)
+p +
+  scale_y_continuous(labels = scales::label_dollar(prefix="R$ ")) +
+  scale_color_continuous(labels = scales::label_dollar(prefix="R$ "))
+
+```
 
 ## Valor Gasto por Partido
+
+gastos_partidos = dadosDeputados %>% 
+                    group_by(sgUF) %>% 
+                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    arrange(desc(valor))
+
+paged_table(gastos_partidos)
 
 
 ## Valor Gasto com Empresas Estrangeiras
