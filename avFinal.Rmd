@@ -53,36 +53,57 @@ O grupo responsável por esse projeto é formado por:
 
 
 ```{r gasto_estado,message=FALSE, warning=FALSE, echo=FALSE}
-#dadosDeputados %>% 
-#  mutate(ï..txNomeParlamentar = txtNomeParlamentar)
 
-gatos_estado = dadosDeputados %>% 
-  group_by(sgUF) %>% 
-  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
+gatos_estado = dadosDeputados %>%
+  group_by(sgUF) %>%
+  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+  arrange(desc(valor))
+
+paged_table(gatos_estado)
 
 library(geobr)
 
+
 dadosMapa <- structure(
-list(X = 1:27, 
-   uf = gatos_estado$sgUF, 
-   valor = gatos_estado$valor), class = "data.frame", row.names = c(NA, -27L))
-states <- read_country(year = 2020)
-states <- dplyr::left_join(states, dadosMapa, by = c("abbrev_state" = "uf"))
+  list(
+    X = 1:27,
+    uf = gatos_estado$sgUF,
+    valor = scales::rescale(gatos_estado$valor)
+  ),
+  class = "data.frame",
+  row.names = c(NA,-27L)
+)
+states <- read_country(year = 2020,showProgress = FALSE)
+states <-
+  dplyr::left_join(states, dadosMapa, by = c("abbrev_state" = "uf"))
 L = min(states$valor)
 S = max(states$valor)
 
-p = states %>% ggplot() + 
-  geom_sf(aes(fill =  valor), size = 0.9) +
-  scale_fill_gradient(low = "red", high = "blue", name = "Gasto por Estado (R$)", limits = c(L, S), labels = scales::label_dollar(prefix="R$ ")) + 
-  xlab("") +  ylab("") +geom_sf_label(aes(label = abbrev_state),label.padding = unit(0.5, "mm"),size = 3) 
+p = states %>% ggplot() +
+  geom_sf(aes(fill =  valor), size = 0.15) +
+  scale_fill_gradient(
+    low = "red",
+    high = "blue",
+    name = "Gasto por Estado",
+    limits = c(L, S),
+    #breaks=c(L,S),
+    #labels=c("Menor Valor","Maior Valor")
+    
+  ) +
+  xlab("") +  ylab("") + geom_sf_label(aes(label = abbrev_state),
+                                       label.padding = unit(0.5, "mm"),
+                                       size = 3)
 
 
 p = p +   labs(title = "Gasto por Estado") +
-  theme(plot.caption = element_text(hjust = 0, face= "italic"), 
-        plot.title.position = "plot", 
-        plot.caption.position =  "plot") 
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"),
+    plot.title.position = "plot",
+    plot.caption.position =  "plot"
+  )
 
-p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),legend.text=element_text(size=10))
+p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),
+                                                  legend.text = element_text(size = 10))
 
 plot(p)
 ```
@@ -93,17 +114,17 @@ Análise para saber quais deputados tiveram mais gastos durante o ano
 
 ```{r gasto_deputado,message=FALSE, warning=FALSE,echo=FALSE}
 #Filtro
-gastos_deputados = dadosDeputados %>% 
-                    group_by(cpf,txNomeParlamentar) %>% 
-                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
-                    arrange(desc(valor)) %>% 
-                    select(txNomeParlamentar,valor)
+gastos_deputados = dadosDeputados %>%
+  group_by(cpf, txNomeParlamentar) %>%
+  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>%
+  arrange(desc(valor)) %>%
+  select(txNomeParlamentar, valor)
 
-head(gastos_deputados,10)
+head(gastos_deputados, 10)
 
 #Testes com gráficos
-p<-ggplot(gastos_deputados)+
- geom_point(aes(x = txNomeParlamentar, y = valor, color = valor))
+p <- ggplot(gastos_deputados) +
+  geom_point(aes(x = txNomeParlamentar, y = valor, color = valor))
 
 require(scales)
 p +
@@ -112,21 +133,43 @@ p +
 
 ```
 
-## Valor Gasto por Partido
+## Valor Gasto por Partido {.tabset}
 
+Análise dos gastos por partidos
+
+### Gasto total por partido
+```{r,message=FALSE, warning=FALSE,echo=FALSE}
 gastos_partidos = dadosDeputados %>% 
-                    group_by(sgUF) %>% 
-                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    group_by(sgPartido) %>% 
+                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
+                              valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE)/n_distinct(cpf)) %>% 
                     arrange(desc(valor))
 
 paged_table(gastos_partidos)
+```
 
+### Gasto relativo a quantidade de deputados
+
+```{r,message=FALSE, warning=FALSE,echo=FALSE}
+gastos_partidos = dadosDeputados %>% 
+                    group_by(sgPartido) %>% 
+                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
+                              valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE)/n_distinct(cpf)) %>% 
+                    arrange(desc(valor_por_qtd_deputado))
+
+paged_table(gastos_partidos)
+```
 
 ## Valor Gasto com Empresas Estrangeiras
 
-
+```{r,message=FALSE, warning=FALSE,echo=FALSE }
 ## Valor Gasto por Mês 
+library("lubridate")
 
+dadosDeputados %>% 
+group_by(datEmissao = format(as.Date(datEmissao),"%Y-%m")) %>% 
+  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
+```
 
 
 
