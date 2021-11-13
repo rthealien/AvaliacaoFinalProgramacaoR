@@ -7,10 +7,13 @@ output:
 ---
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE, echo=FALSE)
 library(tidyverse)
 library(rmarkdown)
+library(plotly)
+
 ```
+
 # Início
 
 ## Introdução
@@ -21,21 +24,23 @@ Esse documento é o resultado da avaliação final da matéria **Introdução à
 
 Para a geração correta do Knit é necessária a instalação do pacote **rmdformats** através do commando
 
-``` {r requisitos, eval=FALSE}
+```{r requisitos, eval=FALSE}
 install.packages("rmdformats")
 ```
 
 ## Dados
 
-Serão utilizados os dados sobre as despesas cobertas pela cota para exercício da atividade parlamentar do deputados em 2020
+Serão utilizados os dados sobre as despesas cobertas pela cota para exercício da atividade parlamentar do deputados em 2020.
 
-```{r dados,warning=FALSE, echo=FALSE}
+Abaixo temos os 10 primeiros registros para ter uma noção de como são os registros da tabela.
+
+```{r dados,results='asis'}
 dados <- read.csv2("Ano-2020.csv", encoding = "UTF-8")
 dadosDeputados = dados %>% filter(!is.na(cpf))
-paged_table(dadosDeputados)
+paged_table(head(dadosDeputados, 10))
 ```
 
-```{r summary,warning=FALSE, echo=FALSE}
+```{r summary}
 #table(dadosDeputados)
 ```
 
@@ -43,23 +48,23 @@ paged_table(dadosDeputados)
 
 O grupo responsável por esse projeto é formado por:
 
-- Giovanni Angelo dos Santos
-- Pedro Leonardo Motta Weyne Marques
-- Rafael Gomes de Oliveira
+-   Giovanni Angelo dos Santos
+-   Pedro Leonardo Motta Weyne Marques
+-   Rafael Gomes de Oliveira
 
 # Análise
 
 ## Valor Gasto por Estado
 
-
-```{r gasto_estado,message=FALSE, warning=FALSE, echo=FALSE}
-
-gatos_estado = dadosDeputados %>%
+```{r gasto_estado}
+options(scipen = 999)
+gastos_estados = dadosDeputados %>%
   group_by(sgUF) %>%
-  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>%
   arrange(desc(valor))
 
-paged_table(gatos_estado)
+#paged_table(gastos_estados)
+knitr::kable(gastos_estados, caption = "Gastos por estado ordenados do maior para o menor valor")
 
 library(geobr)
 
@@ -67,52 +72,47 @@ library(geobr)
 dadosMapa <- structure(
   list(
     X = 1:27,
-    uf = gatos_estado$sgUF,
-    valor = scales::rescale(gatos_estado$valor)
+    uf = gastos_estados$sgUF,
+    #valor = scales::rescale(gastos_estados$valor)
+    valor = gastos_estados$valor
   ),
   class = "data.frame",
-  row.names = c(NA,-27L)
+  row.names = c(NA, -27L)
 )
-states <- read_country(year = 2020,showProgress = FALSE)
+states <- read_country(year = 2020, showProgress = FALSE)
 states <-
   dplyr::left_join(states, dadosMapa, by = c("abbrev_state" = "uf"))
 L = min(states$valor)
 S = max(states$valor)
 
 p = states %>% ggplot() +
-  geom_sf(aes(fill =  valor), size = 0.15) +
-  scale_fill_gradient(
-    low = "red",
-    high = "blue",
+  geom_sf(aes(fill =  valor, text= abbrev_state), size = 0.15, show.legend = TRUE) +
+  scale_fill_gradient2(
     name = "Gasto por Estado",
-    limits = c(L, S),
-    #breaks=c(L,S),
-    #labels=c("Menor Valor","Maior Valor")
+    limits = c(L, S)
+    ) 
     
-  ) +
-  xlab("") +  ylab("") + geom_sf_label(aes(label = abbrev_state),
-                                       label.padding = unit(0.5, "mm"),
-                                       size = 3)
+  
+    p = p +   labs(title = "Gasto por Estado") +
+      theme(
+        plot.caption = element_text(hjust = 0, face = "italic"),
+        plot.title.position = "plot",
+        plot.caption.position =  "plot"
+      )
+    
+    p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),
+                                                      legend.text = element_text(size = 10))
 
+    ggplotly(p)
+    
 
-p = p +   labs(title = "Gasto por Estado") +
-  theme(
-    plot.caption = element_text(hjust = 0, face = "italic"),
-    plot.title.position = "plot",
-    plot.caption.position =  "plot"
-  )
-
-p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),
-                                                  legend.text = element_text(size = 10))
-
-plot(p)
 ```
 
 ## Valor Gasto por Deputado
 
 Análise para saber quais deputados tiveram mais gastos durante o ano
 
-```{r gasto_deputado,message=FALSE, warning=FALSE,echo=FALSE}
+```{r gasto_deputado}
 #Filtro
 gastos_deputados = dadosDeputados %>%
   group_by(cpf, txNomeParlamentar) %>%
@@ -120,7 +120,7 @@ gastos_deputados = dadosDeputados %>%
   arrange(desc(valor)) %>%
   select(txNomeParlamentar, valor)
 
-head(gastos_deputados, 10)
+knitr::kable(head(gastos_deputados, 10),caption = "Os 10 deputados com maiores gastos")
 
 #Testes com gráficos
 p <- ggplot(gastos_deputados) +
@@ -128,8 +128,8 @@ p <- ggplot(gastos_deputados) +
 
 require(scales)
 p +
-  scale_y_continuous(labels = scales::label_dollar(prefix="R$ ")) +
-  scale_color_continuous(labels = scales::label_dollar(prefix="R$ "))
+  scale_y_continuous(labels = scales::label_dollar(prefix = "R$ ")) +
+  scale_color_continuous(labels = scales::label_dollar(prefix = "R$ "))
 
 ```
 
@@ -138,57 +138,53 @@ p +
 Análise dos gastos por partidos
 
 ### Gasto total por partido
-```{r,message=FALSE, warning=FALSE,echo=FALSE}
-gastos_partidos = dadosDeputados %>% 
-                    group_by(sgPartido) %>% 
-                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
-                              valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE)/n_distinct(cpf)) %>% 
-                    arrange(desc(valor))
 
-paged_table(gastos_partidos)
+```{r}
+gastos_partidos = dadosDeputados %>%
+  group_by(sgPartido) %>%
+  summarise(
+    valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
+    valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE) /
+      n_distinct(cpf)
+  ) %>%
+  arrange(desc(valor))
+
+knitr::kable(gastos_partidos)
+#paged_table(gastos_partidos)
 ```
 
 ### Gasto relativo a quantidade de deputados
 
-```{r,message=FALSE, warning=FALSE,echo=FALSE}
-gastos_partidos = dadosDeputados %>% 
-                    group_by(sgPartido) %>% 
-                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
-                              valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE)/n_distinct(cpf)) %>% 
-                    arrange(desc(valor_por_qtd_deputado))
+```{r}
+gastos_partidos = dadosDeputados %>%
+  group_by(sgPartido) %>%
+  summarise(
+    valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
+    valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE) /
+      n_distinct(cpf)
+  ) %>%
+  arrange(desc(valor_por_qtd_deputado))
 
-paged_table(gastos_partidos)
+#paged_table(gastos_partidos)
+knitr::kable(gastos_partidos)
 ```
 
 ## Valor Gasto com Empresas Estrangeiras
-
-```{r,message=FALSE, warning=FALSE,echo=FALSE }
-## Valor Gasto por Mês 
-library("lubridate")
-
-dadosDeputados %>% 
-group_by(datEmissao = format(as.Date(datEmissao),"%Y-%m")) %>% 
+```{r}
+gastos_estrangeiro = dadosDeputados %>%
+  filter(txtCNPJCPF=="000.000.000/0001-0") %>% 
+  group_by(txtCNPJCPF) %>%
   summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
+knitr::kable(gastos_estrangeiro)
+```
+## Valor Gasto por Mês
+```{r}
+gastos_mes = dadosDeputados %>%
+  group_by(datEmissao = format(as.Date(datEmissao), "%Y-%m")) %>%
+  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
+knitr::kable(gastos_mes)
 ```
 
+# Conclusão
 
-
-
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
-```
-
-# Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Depois da análise dos dados concluimos que...
