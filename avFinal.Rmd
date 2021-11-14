@@ -11,10 +11,6 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, echo=FALSE)
 library(tidyverse)
 library(rmarkdown)
 library(plotly)
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 ```
 
 # Início
@@ -25,7 +21,7 @@ Esse documento é o resultado da avaliação final da matéria **Introdução à
 
 ## Requisitos
 
-Para a geração correta do Knit é necessária a instalação do pacote **rmdformats** através do commando
+Para a geração correta do Knit é necessária a instalação do pacote **rmdformats** através do comando
 
 ```{r requisitos, eval=FALSE}
 install.packages("rmdformats")
@@ -40,11 +36,8 @@ Abaixo temos os 10 primeiros registros para ter uma noção de como são os regi
 ```{r dados,results='asis'}
 dados <- read.csv2("Ano-2020.csv", encoding = "UTF-8")
 dadosDeputados = dados %>% filter(!is.na(cpf))
+dadosDeputados$data = as.Date(paste(dadosDeputados$numAno,dadosDeputados$numMes,"1",sep="-"))
 paged_table(head(dadosDeputados, 10))
-```
-
-```{r summary}
-#table(dadosDeputados)
 ```
 
 ## Grupo
@@ -59,24 +52,32 @@ O grupo responsável por esse projeto é formado por:
 
 ## Valor Gasto por Estado
 
-```{r gasto_estado}
+```{r gasto_estado,message=FALSE, warning=FALSE, echo=FALSE}
+
 options(scipen = 999)
 gastos_estados = dadosDeputados %>%
   group_by(sgUF) %>%
   summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>%
   arrange(desc(valor))
 
-<<<<<<< Updated upstream
 #paged_table(gastos_estados)
 knitr::kable(gastos_estados, caption = "Gastos por estado ordenados do maior para o menor valor")
-=======
->>>>>>> Stashed changes
+
+
+gastos_estado_mes = dadosDeputados %>% 
+                      group_by(data,sgUF) %>% 
+                      #filter(sgPartido != "S.PART.") %>% 
+                      summarise(valor = mean(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                      arrange(desc(valor))
+
+ggplotly( gastos_estado_mes %>% 
+  ggplot() +
+  geom_line(aes(x = data, y = valor, color = sgUF))+
+  labs(title = "Média de Gastos Mensal por Estado em 2020"))
 
 library(geobr)
 
-
 dadosMapa <- structure(
-<<<<<<< Updated upstream
   list(
     X = 1:27,
     uf = gastos_estados$sgUF,
@@ -112,17 +113,13 @@ p = states %>% ggplot() +
 
     ggplotly(p)
     
-=======
->>>>>>> Stashed changes
-
 ```
 
 ## Valor Gasto por Deputado
 
-Análise para saber quais deputados tiveram mais gastos durante o ano
+Análise para saber quais deputados tiveram mais gastos durante o ano.
 
-<<<<<<< Updated upstream
-```{r gasto_deputado}
+```{r gasto_deputado,message=FALSE, warning=FALSE,echo=FALSE}
 #Filtro
 gastos_deputados = dadosDeputados %>%
   group_by(cpf, txNomeParlamentar) %>%
@@ -130,45 +127,64 @@ gastos_deputados = dadosDeputados %>%
   arrange(desc(valor)) %>%
   select(txNomeParlamentar, valor)
 
-knitr::kable(head(gastos_deputados, 10),caption = "Os 10 deputados com maiores gastos")
+gastos_deputados = head(gastos_deputados, 10)
 
-#Testes com gráficos
-p <- ggplot(gastos_deputados) +
-  geom_point(aes(x = txNomeParlamentar, y = valor, color = valor))
+knitr::kable(gastos_deputados,caption = "Os 10 deputados com maiores gastos")
 
-require(scales)
-p +
-  scale_y_continuous(labels = scales::label_dollar(prefix = "R$ ")) +
-  scale_color_continuous(labels = scales::label_dollar(prefix = "R$ "))
-=======
+fig = plot_ly(
+  x = gastos_deputados$valor,
+  y = gastos_deputados$txNomeParlamentar,
+  name = "Gastos por Deputado",
+  type = "bar",
+  orientation = "h"
+)
+
+fig
+```
+
+
+## Valor Gasto por Partido {.tabset}
+```{r echo=F, message=FALSE, warning=F}
+gastos_partidos = dadosDeputados %>% 
+                    group_by(sgPartido,txNomeParlamentar) %>% 
+                      summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    arrange(desc(valor))
+
+gastos_partidos = head(gastos_partidos,100)
 
 ```
 
-<<<<<<< Updated upstream
-## Valor Gasto por Partido {.tabset}
->>>>>>> Stashed changes
+### Valor Total Gasto por Mês 
 
-Análise dos gastos por partidos
+```{r echo=F, message=FALSE, warning=F}
+options(scipen = 999)
 
-<<<<<<< Updated upstream
-### Gasto total por partido
->>>>>>> Stashed changes
+gastos_mes_top10 = dadosDeputados %>% 
+                    group_by(data) %>% 
+                    summarise(valor = mean(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    arrange(desc(valor))
+                    head(10)
 
-```{r}
-gastos_partidos = dadosDeputados %>%
-  group_by(sgPartido) %>%
-  summarise(
-    valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
-    valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE) /
-      n_distinct(cpf)
-  ) %>%
-  arrange(desc(valor))
+ggplotly( gastos_mes_top10 %>% 
+  ggplot() +
+  geom_line(aes(x = data, y = valor))+
+  labs(title = "Gasto Mensal em 2020"))
+```
 
-<<<<<<< Updated upstream
-knitr::kable(gastos_partidos)
-#paged_table(gastos_partidos)
-=======
->>>>>>> Stashed changes
+### Valor Médio Mensal Por Partido
+```{r echo=F, message=FALSE, warning=F}
+gastos_partido_mes = dadosDeputados %>% 
+                      group_by(data,sgPartido) %>% 
+                      filter(sgPartido != "S.PART.") %>% 
+                      summarise(valor = mean(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                      arrange(desc(valor)) #%>% 
+                      #head(10)
+                      
+ggplotly( gastos_partido_mes %>% 
+  ggplot() +
+  geom_line(aes(x = data, y = valor, color = sgPartido))+
+  labs(title = "Média de Gastos Mensal por Partido em 2020"))
+
 ```
 
 ### Gasto relativo a quantidade de deputados
