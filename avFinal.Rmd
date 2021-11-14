@@ -11,7 +11,10 @@ knitr::opts_chunk$set(message=FALSE, warning=FALSE, echo=FALSE)
 library(tidyverse)
 library(rmarkdown)
 library(plotly)
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 ```
 
 # Início
@@ -63,13 +66,17 @@ gastos_estados = dadosDeputados %>%
   summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>%
   arrange(desc(valor))
 
+<<<<<<< Updated upstream
 #paged_table(gastos_estados)
 knitr::kable(gastos_estados, caption = "Gastos por estado ordenados do maior para o menor valor")
+=======
+>>>>>>> Stashed changes
 
 library(geobr)
 
 
 dadosMapa <- structure(
+<<<<<<< Updated upstream
   list(
     X = 1:27,
     uf = gastos_estados$sgUF,
@@ -105,6 +112,8 @@ p = states %>% ggplot() +
 
     ggplotly(p)
     
+=======
+>>>>>>> Stashed changes
 
 ```
 
@@ -112,6 +121,7 @@ p = states %>% ggplot() +
 
 Análise para saber quais deputados tiveram mais gastos durante o ano
 
+<<<<<<< Updated upstream
 ```{r gasto_deputado}
 #Filtro
 gastos_deputados = dadosDeputados %>%
@@ -130,14 +140,19 @@ require(scales)
 p +
   scale_y_continuous(labels = scales::label_dollar(prefix = "R$ ")) +
   scale_color_continuous(labels = scales::label_dollar(prefix = "R$ "))
+=======
 
 ```
 
+<<<<<<< Updated upstream
 ## Valor Gasto por Partido {.tabset}
+>>>>>>> Stashed changes
 
 Análise dos gastos por partidos
 
+<<<<<<< Updated upstream
 ### Gasto total por partido
+>>>>>>> Stashed changes
 
 ```{r}
 gastos_partidos = dadosDeputados %>%
@@ -149,8 +164,11 @@ gastos_partidos = dadosDeputados %>%
   ) %>%
   arrange(desc(valor))
 
+<<<<<<< Updated upstream
 knitr::kable(gastos_partidos)
 #paged_table(gastos_partidos)
+=======
+>>>>>>> Stashed changes
 ```
 
 ### Gasto relativo a quantidade de deputados
