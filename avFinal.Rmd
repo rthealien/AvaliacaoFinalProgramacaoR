@@ -36,9 +36,7 @@ Abaixo temos os 10 primeiros registros para ter uma noção de como são os regi
 
 ```{r dados,results='asis'}
 dados <- read.csv2("Ano-2020.csv", encoding = "UTF-8")
-dadosDeputados = dados %>%
-  filter(!is.na(cpf)) %>% 
-  mutate(vlrDocumento = as.numeric(vlrDocumento))
+dadosDeputados = dados %>% filter(!is.na(cpf))
 paged_table(head(dadosDeputados, 10))
 ```
 
@@ -103,9 +101,7 @@ p = states %>% ggplot() +
       )
     
     p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),
-                                                      legend.text = element_text(size = 10)) +
-      scale_y_continuous(labels = scales::label_dollar(prefix = "R$ ")) +
-  scale_color_continuous(labels = scales::label_dollar(prefix = "R$ "))
+                                                      legend.text = element_text(size = 10))
 
     ggplotly(p)
     
