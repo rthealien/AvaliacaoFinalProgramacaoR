@@ -1,7 +1,7 @@
 ---
 title: "Avaliação Final de Introdução à Programação em R"
 author: Giovanni Angelo dos Santos, Pedro Leonardo Motta Weyne Marques e Rafael Gomes de Oliveira
-date: "07/11/2021"
+date: "17/11/2021"
 output: 
   rmdformats::material
 ---
@@ -247,7 +247,7 @@ kable(subset(gastos_partidos %>% arrange(desc(valor_por_qtd_deputado)), select =
 ```
 
 ### Valor Médio Mensal Por Partido
-```{r}
+```{r gasto_mensal_por_partido}
 gastos_partido_mes = dadosDeputados %>% 
                       group_by(data,sgPartido) %>% 
                       filter(sgPartido != "S.PART.") %>% 
@@ -265,7 +265,9 @@ ggplotly( gastos_partido_mes %>%
 
 
 ## Valor Gasto com Empresas Estrangeiras
-```{r}
+Tabela com o total de gastos realizados com empresas estrangeiras e nacionais.
+
+```{r gastos_empresa_estrangeira}
 gastos_empresa_estrangeira <- dadosDeputados %>% 
                     group_by(Empresa = txtCNPJCPF == "000.000.000/0001-0") %>% 
                     summarise(Valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
@@ -279,12 +281,17 @@ gastos_empresa_estrangeira <- dadosDeputados %>%
 gastos_empresa_estrangeira$Empresa[1] = "Estrangeira"
 gastos_empresa_estrangeira$Empresa[2] = "Nacional"
 
-knitr::kable(drop_na(gastos_empresa_estrangeira))
+knitr::kable(drop_na(gastos_empresa_estrangeira),
+      format = "html",
+      table.attr = "style='width:100%;border-collapse: separate;border-spacing: 50px 0;'")
 
 ```
+
 ## Valor Gasto por Mês
 
-```{r}
+Gráfico com os valores médios gastos por mês
+
+```{r gastos_mes}
 gastos_mes_top10 = dadosDeputados %>% 
                     group_by(data) %>% 
                     summarise(valor = mean(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
@@ -294,8 +301,5 @@ gastos_mes_top10 = dadosDeputados %>%
 ggplotly( gastos_mes_top10 %>% 
   ggplot() +
   geom_line(aes(x = data, y = valor))+
-  labs(title = "Gasto Mensal em 2020"))
+  labs(title = "Gasto Mensal no ano analisado"))
 ```
-# Conclusão
-
-Depois da análise dos dados concluimos que...
