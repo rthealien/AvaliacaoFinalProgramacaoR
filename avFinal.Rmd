@@ -239,13 +239,13 @@ kable(subset(gastos_partidos,select=-c(valor,valor_por_qtd_deputado)),
 ```{r}
 gastos_empresa_estrangeira <- dadosDeputados %>% 
                     group_by(Empresa = txtCNPJCPF == "000.000.000/0001-0") %>% 
-                    summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
-                    arrange(desc(valor))
+                    summarise(Valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    arrange(desc(Valor))
 
 gastos_empresa_estrangeira$Empresa[1] = "Nacional"
 gastos_empresa_estrangeira$Empresa[2] = "Estrangeira"
 
-knitr::kable(gastos_empresa_estrangeira)
+knitr::kable(drop_na(gastos_empresa_estrangeira))
 
 ```
 ## Valor Gasto por Mês
