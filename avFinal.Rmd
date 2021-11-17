@@ -58,6 +58,29 @@ O grupo responsável por esse projeto é formado por:
 
 # Análise
 
+## Valor Gasto com Empresas Estrangeiras
+Tabela com o total de gastos realizados com empresas estrangeiras e nacionais.
+
+```{r gastos_empresa_estrangeira}
+gastos_empresa_estrangeira <- dadosDeputados %>% 
+                    group_by(Empresa = txtCNPJCPF == "000.000.000/0001-0") %>% 
+                    summarise(Valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    mutate(Valor = scales::dollar(Valor,
+                              prefix = "R$ ",
+                              big.mark = ".",
+                              decimal.mark = ",",
+                              accuracy = .01)) %>% 
+                    arrange(desc(Valor))
+
+gastos_empresa_estrangeira$Empresa[1] = "Estrangeira"
+gastos_empresa_estrangeira$Empresa[2] = "Nacional"
+
+knitr::kable(drop_na(gastos_empresa_estrangeira),
+      format = "html",
+      table.attr = "style='width:100%;border-collapse: separate;border-spacing: 50px 0;'")
+
+```
+
 ## Valor Gasto por Estado {.tabset}
 
 A primeira análise feita é referente ao total de gastos realizados por estados e unidade federativa.
@@ -259,31 +282,6 @@ ggplotly( gastos_partido_mes %>%
   ggplot() +
   geom_line(aes(x = data, y = valor, color = sgPartido))+
   labs(title = "Média de Gastos Mensal por Partido no ano"))
-
-```
-
-
-
-## Valor Gasto com Empresas Estrangeiras
-Tabela com o total de gastos realizados com empresas estrangeiras e nacionais.
-
-```{r gastos_empresa_estrangeira}
-gastos_empresa_estrangeira <- dadosDeputados %>% 
-                    group_by(Empresa = txtCNPJCPF == "000.000.000/0001-0") %>% 
-                    summarise(Valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
-                    mutate(Valor = scales::dollar(Valor,
-                              prefix = "R$ ",
-                              big.mark = ".",
-                              decimal.mark = ",",
-                              accuracy = .01)) %>% 
-                    arrange(desc(Valor))
-
-gastos_empresa_estrangeira$Empresa[1] = "Estrangeira"
-gastos_empresa_estrangeira$Empresa[2] = "Nacional"
-
-knitr::kable(drop_na(gastos_empresa_estrangeira),
-      format = "html",
-      table.attr = "style='width:100%;border-collapse: separate;border-spacing: 50px 0;'")
 
 ```
 
