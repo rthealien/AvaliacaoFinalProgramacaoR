@@ -13,13 +13,16 @@ library(rmarkdown)
 library(plotly)
 library(knitr)
 library(kableExtra)
+library(geobr)
+
+options(scipen = 999)
 ```
 
 # Início
 
 ## Introdução
 
-Esse documento é o resultado da avaliação final da matéria **Introdução à Programação em R**, ministrada pela professora Nadine, do curso de Especialização em Ciência de Dados na Fundação CEPERJ.
+Esse documento é o resultado da avaliação final da matéria **Introdução à Programação em R**, ministrada pela professora Nadine Melloni, do curso de Especialização em Ciência de Dados na Fundação CEPERJ.
 
 ## Requisitos
 
@@ -57,48 +60,71 @@ O grupo responsável por esse projeto é formado por:
 
 ## Valor Gasto por Estado {.tabset}
 
+A primeira análise feita é referente ao total de gastos realizados por estados e unidade federativa.
+
 ### Gastos totais
 ```{r gasto_estado_total}
-
-options(scipen = 999)
 gastos_estados = dadosDeputados %>%
   group_by(sgUF) %>%
   summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>%
-  mutate(valor_real = scales::dollar(valor,prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = .01)) %>% 
+  mutate(
+        "UF" = sgUF,
+    "Valor gasto" = scales::dollar(
+      valor,
+      prefix = "R$ ",
+      big.mark = ".",
+      decimal.mark = ",",
+      accuracy = .01
+    )
+  ) %>%
   arrange(desc(valor))
 
-#paged_table(gastos_estados)
-kable(subset(gastos_estados, select=-valor), caption = "Gastos por estado ordenados do maior para o menor valor",format = "html", table.attr = "style='width:100%;'")
+kable(
+  subset(gastos_estados, select = -c(valor,sgUF)),
+  caption = "Gastos por estado ordenados do maior para o menor valor",
+  format = "html",
+  table.attr = "style='width:100%;border-collapse: separate;'"
+)
 ```
 
 ### Gráfico com gastos médios
 
-```{r gasto_medio}
+```{r gasto_estado_medio}
 gastos_estado_mes = dadosDeputados %>%
   group_by(data, sgUF) %>%
-  #filter(sgPartido != "S.PART.") %>%
   summarise(valor = mean(as.numeric(vlrLiquido), na.rm = TRUE)) %>%
-  mutate(valor_real = scales::dollar(
-    valor,
-    prefix = "R$ ",
-    big.mark = ".",
-    decimal.mark = ",",
-    accuracy = .01
-  )) %>%
+  mutate(
+    valor_real = scales::dollar(
+      valor,
+      prefix = "R$ ",
+      big.mark = ".",
+      decimal.mark = ",",
+      accuracy = .01
+    )
+  ) %>%
   arrange(desc(valor))
 
-ggplotly( gastos_estado_mes %>% 
-  ggplot() +
-  geom_line(aes(x = data, y = valor, color = sgUF))+
-  scale_y_continuous(labels = scales::label_dollar(prefix = "R$ ",big.mark = ".",decimal.mark = ",",accuracy = 2)) +
-  labs(title = "Média de Gastos Mensal por Estado em 2020"))
+ggplotly(
+  gastos_estado_mes %>%
+    ggplot() +
+    geom_line(aes(
+      x = data, y = valor, color = sgUF
+    )) +
+    scale_y_continuous(
+      labels = scales::label_dollar(
+        prefix = "R$ ",
+        big.mark = ".",
+        decimal.mark = ",",
+        accuracy = 2
+      )
+    ) +
+    labs(title = "Média de Gastos Mensal por Estado do ano.")
+)
 ```
 
 ### Gráfico dos estados
 
 ```{r grafico_mapa}
-library(geobr)
-options(scipen = 999)
 
 gastos_estados = dadosDeputados %>%
   group_by(sgUF) %>%
@@ -109,11 +135,10 @@ dadosMapa <- structure(
   list(
     X = 1:27,
     uf = gastos_estados$sgUF,
-    #valor = scales::rescale(gastos_estados$valor)
     valor = gastos_estados$valor
   ),
   class = "data.frame",
-  row.names = c(NA, -27L)
+  row.names = c(NA,-27L)
 )
 states <- read_country(year = 2020, showProgress = FALSE)
 states <-
@@ -122,30 +147,30 @@ L = min(states$valor)
 S = max(states$valor)
 
 p = states %>% ggplot() +
-  geom_sf(aes(fill =  valor, text= abbrev_state), size = 0.15, show.legend = TRUE) +
-  scale_fill_gradient2(
-    name = "Gasto por Estado",
-    limits = c(L, S)
-    ) 
-    
-  
-    p = p +   labs(title = "Gasto por Estado") +
-      theme(
-        plot.caption = element_text(hjust = 0, face = "italic"),
-        plot.title.position = "plot",
-        plot.caption.position =  "plot"
-      )
-    
-    p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),
-                                                      legend.text = element_text(size = 10))
+  geom_sf(aes(fill =  valor, text = abbrev_state),
+          size = 0.15,
+          show.legend = TRUE) +
+  scale_fill_gradient2(name = "Gasto por Estado",
+                       limits = c(L, S))
 
-    ggplotly(p)
+
+p = p +   labs(title = "Gasto por Estado") +
+  theme(
+    plot.caption = element_text(hjust = 0, face = "italic"),
+    plot.title.position = "plot",
+    plot.caption.position =  "plot"
+  )
+
+p = p + theme(legend.position = "bottom") + theme(legend.title = element_text(size = 10),
+                                                  legend.text = element_text(size = 10))
+
+ggplotly(p)
 
 ```
 
 ## Valor Gasto por Deputado
 
-Análise para saber quais deputados tiveram mais gastos durante o ano.
+Análise para saber quais deputados tiveram mais gastos durante o ano em formato de gráfico de barra dos 10 maiores gastos.
 
 ```{r gasto_deputado}
 #Filtro
@@ -157,19 +182,16 @@ gastos_deputados = dadosDeputados %>%
 
 gastos_deputados = head(gastos_deputados, 10)
 
-knitr::kable(
-  gastos_deputados %>% mutate("Nome do Parlamentar" = txNomeParlamentar, "Valor" = valor_real) %>% select("Nome do Parlamentar", "Valor"),
-  caption = "Os 10 deputados com maiores gastos",
-  format = "html",
-  table.attr = "style='width:100%;'"
-)
+# Ordenando os dados
+gastos_deputados$txNomeParlamentar <- factor(gastos_deputados$txNomeParlamentar, levels = unique(gastos_deputados$txNomeParlamentar)[order(gastos_deputados$valor, decreasing = FALSE)])
 
 fig = plot_ly(
   x = gastos_deputados$valor,
   y = gastos_deputados$txNomeParlamentar,
   name = "Gastos por Deputado",
   type = "bar",
-  orientation = "h"
+  orientation = "h",
+  
 )
 
 fig
@@ -178,29 +200,54 @@ fig
 
 ## Valor Gasto por Partido {.tabset}
 
+Análise dos valores gastos de acordo com os partidos, levando em consideração o total e também a proporção desse total com a quantidade de deputados do partido em questão.
+
 ### Valor Total Gasto por Partido 
 
-```{r}
+```{r gastos_partidos_total}
 gastos_partidos = dadosDeputados %>%
   group_by(sgPartido) %>%
   summarise(
     valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
+    "Quantidade de Deputados" = n_distinct(cpf),
     valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE) /
       n_distinct(cpf)
   ) %>%
-  mutate("Valor Total" = scales::dollar(valor,prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = .01),"Valor por Quantidade de Deputados" = scales::dollar(valor_por_qtd_deputado,prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = .01)) %>%
-  arrange(desc(valor))
+  mutate(
+    "Partido" = sgPartido,
+    "Valor Total" = scales::dollar(
+      valor,
+      prefix = "R$ ",
+      big.mark = ".",
+      decimal.mark = ",",
+      accuracy = .01
+    ),
+    "Valor por Quantidade de Deputados" = scales::dollar(
+      valor_por_qtd_deputado,
+      prefix = "R$ ",
+      big.mark = ".",
+      decimal.mark = ",",
+      accuracy = .01
+    )
+  ) 
 
 #paged_table(gastos_partidos)
-kable(subset(gastos_partidos,select=-c(valor,valor_por_qtd_deputado)),
+kable(subset(gastos_partidos %>% arrange(desc(valor)), select = c("Partido", "Valor Total","Quantidade de Deputados","Valor por Quantidade de Deputados" )),
+      format = "html",
+      table.attr = "style='width:100%;border-collapse: separate;border-spacing: 50px 0;'")
+```
+
+### Gasto relativo a quantidade de deputados
+
+```{r gastos_partidos_qtd_deputados}
+kable(subset(gastos_partidos %>% arrange(desc(valor_por_qtd_deputado)), select = c("Partido", "Valor Total","Quantidade de Deputados","Valor por Quantidade de Deputados" )),
   format = "html",
-  table.attr = "style='width:100%;'"
+  table.attr = "style='width:100%;border-collapse: separate;border-collapse: separate;border-spacing: 50px 0;'"
 )
 ```
 
-
 ### Valor Médio Mensal Por Partido
-```{r echo=F, message=FALSE, warning=F}
+```{r}
 gastos_partido_mes = dadosDeputados %>% 
                       group_by(data,sgPartido) %>% 
                       filter(sgPartido != "S.PART.") %>% 
@@ -211,29 +258,11 @@ gastos_partido_mes = dadosDeputados %>%
 ggplotly( gastos_partido_mes %>% 
   ggplot() +
   geom_line(aes(x = data, y = valor, color = sgPartido))+
-  labs(title = "Média de Gastos Mensal por Partido em 2020"))
+  labs(title = "Média de Gastos Mensal por Partido no ano"))
 
 ```
 
-### Gasto relativo a quantidade de deputados
 
-```{r}
-gastos_partidos = dadosDeputados %>%
-  group_by(sgPartido) %>%
-  summarise(
-    valor = sum(as.numeric(vlrLiquido), na.rm = TRUE),
-    valor_por_qtd_deputado = sum(as.numeric(vlrLiquido), na.rm = TRUE) /
-      n_distinct(cpf)
-  ) %>%
-  mutate("Valor Total" = scales::dollar(valor,prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = .01),"Valor por Quantidade de Deputados" = scales::dollar(valor_por_qtd_deputado,prefix = "R$ ", big.mark = ".", decimal.mark = ",", accuracy = .01)) %>%
-  arrange(desc(valor_por_qtd_deputado))
-
-#paged_table(gastos_partidos)
-kable(subset(gastos_partidos,select=-c(valor,valor_por_qtd_deputado)),
-  format = "html",
-  table.attr = "style='width:100%;'"
-)
-```
 
 ## Valor Gasto com Empresas Estrangeiras
 ```{r}
@@ -249,16 +278,8 @@ knitr::kable(drop_na(gastos_empresa_estrangeira))
 
 ```
 ## Valor Gasto por Mês
-```{r}
-gastos_mes = dadosDeputados %>%
-  group_by(datEmissao = format(as.Date(datEmissao), "%Y-%m")) %>%
-  summarise(valor = sum(as.numeric(vlrLiquido), na.rm = TRUE))
-knitr::kable(gastos_mes)
-```
 
 ```{r}
-options(scipen = 999)
-
 gastos_mes_top10 = dadosDeputados %>% 
                     group_by(data) %>% 
                     summarise(valor = mean(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
