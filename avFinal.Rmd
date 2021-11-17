@@ -269,10 +269,15 @@ ggplotly( gastos_partido_mes %>%
 gastos_empresa_estrangeira <- dadosDeputados %>% 
                     group_by(Empresa = txtCNPJCPF == "000.000.000/0001-0") %>% 
                     summarise(Valor = sum(as.numeric(vlrLiquido), na.rm = TRUE)) %>% 
+                    mutate(Valor = scales::dollar(Valor,
+                              prefix = "R$ ",
+                              big.mark = ".",
+                              decimal.mark = ",",
+                              accuracy = .01)) %>% 
                     arrange(desc(Valor))
 
-gastos_empresa_estrangeira$Empresa[1] = "Nacional"
-gastos_empresa_estrangeira$Empresa[2] = "Estrangeira"
+gastos_empresa_estrangeira$Empresa[1] = "Estrangeira"
+gastos_empresa_estrangeira$Empresa[2] = "Nacional"
 
 knitr::kable(drop_na(gastos_empresa_estrangeira))
 
