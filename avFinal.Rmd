@@ -83,7 +83,7 @@ knitr::kable(drop_na(gastos_empresa_estrangeira),
 
 ## Valor Gasto por Estado {.tabset}
 
-A primeira análise feita é referente ao total de gastos realizados por estados e unidade federativa.
+Esta análise feita é referente ao total de gastos realizados por estados e unidade federativa.
 
 ### Gastos totais
 ```{r gasto_estado_total}
